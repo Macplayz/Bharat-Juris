@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. THE USER
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  
+  chats     Chat[]
+  documents Document[]
+}
+
+// 2. THE CHAT SESSIONS (Nyaya Sahayak)
+model Chat {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String    // e.g., "Property Dispute Inquiry"
+  createdAt DateTime  @default(now())
+  
+  user      User      @relation(fields: [userId], references: [id])
+  messages  Message[]
+}
+
+// 3. THE MESSAGES (The actual conversation)
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  role      String   // "user" or "bot"
+  content   String   // The text content
+  createdAt DateTime @default(now())
+  
+  chat      Chat     @relation(fields: [chatId], references: [id])
+}
+
+// 4. GENERATED DOCUMENTS (Drafting Tool)
+model Document {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "Rent Agreement", "Affidavit", etc.
+  content   String   // The full legal text generated
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+}
