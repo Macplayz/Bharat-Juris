@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     if (!file) return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
 
-    // 1. Strict Image Check (Vision models crash on PDFs)
+    // 1. Strict Image Check
     if (file.type === 'application/pdf') {
       return NextResponse.json(
         { error: "This AI model supports Images only. Please upload a Screenshot (JPG/PNG)." }, 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(bytes);
     const base64Image = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    // 2. Call Groq (UPDATED: Using Llama 4 Scout)
+    // 2. Call Groq (UPDATED: Llama 4 Scout)
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
           ],
         },
       ],
-      // NEW ACTIVE MODEL
+      // NEW ACTIVE MODEL for 2025
       model: "meta-llama/llama-4-scout-17b-16e-instruct", 
       temperature: 0.1,
       response_format: { type: "json_object" },
