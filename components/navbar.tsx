@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Scale, Menu, MessageSquare, FileSearch, PenTool } from "lucide-react";
-import { ModeToggle } from "@/components/mode-toggle";
+import { Scale, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
   Sheet,
@@ -21,11 +20,11 @@ export default function Navbar() {
     return null;
   }
 
-  // NEW: Clean, functional labels
+  // CLEAN, TEXT-ONLY LINKS
   const navLinks = [
-    { name: "Chat", href: "/chat", icon: <MessageSquare className="w-4 h-4" /> },
-    { name: "Analyze", href: "/documents", icon: <FileSearch className="w-4 h-4" /> },
-    { name: "Draft", href: "/draft", icon: <PenTool className="w-4 h-4" /> },
+    { name: "Nyaya Sahayak", href: "/chat" },
+    { name: "Analyzer", href: "/documents" },
+    { name: "Legal Drafter", href: "/draft" },
   ];
 
   return (
@@ -38,33 +37,30 @@ export default function Navbar() {
           <span>BharatJuris</span>
         </Link>
 
-        {/* Desktop Nav */}
+        {/* Desktop Nav (Text Only) */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-700 dark:text-slate-200">
           {navLinks.map((link) => (
             <Link 
               key={link.name} 
               href={link.href} 
-              className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-semibold tracking-wide"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-semibold tracking-wide"
             >
-              {link.icon}
               {link.name}
             </Link>
           ))}
         </div>
 
-        {/* Right Actions */}
+        {/* Right Actions (No Theme Toggle) */}
         <div className="hidden md:flex items-center gap-3">
-           <ModeToggle />
            <Link href="/chat">
             <Button size="sm" className="rounded-full bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 font-bold px-6 shadow-md transition-transform hover:scale-105">
-              Launch App
+              Start Now
             </Button>
            </Link>
         </div>
 
         {/* Mobile Menu */}
         <div className="md:hidden flex items-center gap-2">
-          <ModeToggle />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-slate-900 dark:text-white">
@@ -77,14 +73,13 @@ export default function Navbar() {
                   <Link 
                     key={link.name} 
                     href={link.href} 
-                    className="flex items-center gap-2 text-lg font-medium text-slate-900 dark:text-white"
+                    className="text-lg font-medium text-slate-900 dark:text-white"
                   >
-                    {link.icon}
                     {link.name}
                   </Link>
                 ))}
                 <Link href="/chat" className="w-full max-w-xs">
-                  <Button className="w-full rounded-full font-bold">Launch App</Button>
+                  <Button className="w-full rounded-full font-bold">Start Now</Button>
                 </Link>
               </div>
             </SheetContent>
