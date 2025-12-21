@@ -23,12 +23,12 @@ import {
 export default function BharatJurisChat() {
   // 1. LANGUAGE CONFIGURATION
   const languages = [
-    { code: 'en-IN', short: 'EN', label: 'English', prompt: 'Answer in professional English.' },
-    { code: 'hi-IN', short: 'HI', label: 'Hindi', prompt: 'Answer in Hindi (Devanagari).' },
-    { code: 'mr-IN', short: 'MR', label: 'Marathi', prompt: 'Answer in Marathi.' },
-    { code: 'gu-IN', short: 'GU', label: 'Gujarati', prompt: 'Answer in Gujarati.' },
-    { code: 'ta-IN', short: 'TA', label: 'Tamil', prompt: 'Answer in Tamil.' },
-    { code: 'te-IN', short: 'TE', label: 'Telugu', prompt: 'Answer in Telugu.' },
+    { code: 'en', short: 'EN', label: 'English', prompt: 'Answer in professional English.' },
+    { code: 'hi', short: 'HI', label: 'Hindi', prompt: 'Answer in Hindi (Devanagari).' },
+    { code: 'mr', short: 'MR', label: 'Marathi', prompt: 'Answer in Marathi.' },
+    { code: 'gu', short: 'GU', label: 'Gujarati', prompt: 'Answer in Gujarati.' },
+    { code: 'ta', short: 'TA', label: 'Tamil', prompt: 'Answer in Tamil.' },
+    { code: 'te', short: 'TE', label: 'Telugu', prompt: 'Answer in Telugu.' },
   ];
   
   // Default to English
@@ -49,10 +49,12 @@ export default function BharatJurisChat() {
     ]
   });
 
-  // 3. STATE FOR VOICE
-  const [isListening, setIsListening] = useState(false);
+  // 3. ROBUST VOICE RECORDING STATE
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -67,6 +69,89 @@ export default function BharatJurisChat() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // --- NEW: SERVER-SIDE VOICE INPUT (Fixes Vercel/Safari Issues) ---
+  const handleVoiceInput = async () => {
+    // A. STOP RECORDING (Manual)
+    if (isRecording) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop(); // This triggers onstop event
+        setIsRecording(false);
+        setIsTranscribing(true); // Show loading spinner
+      }
+      return;
+    }
+
+    // B. START RECORDING
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // 1. DETECT SUPPORTED MIME TYPE
+      // Safari/iOS requires 'audio/mp4', Chrome uses 'audio/webm'
+      let mimeType = 'audio/webm'; 
+      if (typeof MediaRecorder.isTypeSupported === 'function') {
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+          mimeType = 'audio/ogg';
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      // Collect audio chunks
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+
+      // Process when stopped
+      mediaRecorder.onstop = async () => {
+        // Create audio blob with the CORRECT detected mimeType
+        const audioBlob = new Blob(chunksRef.current, { type: mimeType });
+        
+        // Determine file extension based on mimeType
+        const extension = mimeType.includes('mp4') ? 'm4a' : 'webm';
+        const file = new File([audioBlob], `voice_input.${extension}`, { type: mimeType });
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("language", selectedLang.code); // Send selected language code
+
+        try {
+          const response = await fetch("/api/transcribe", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          if (data.text) {
+             // Append transcribed text to current input
+             setInput((prev) => prev + (prev ? " " : "") + data.text);
+          } else {
+             alert("Could not hear audio. Please try again.");
+          }
+        } catch (error) {
+          console.error("Transcribe error:", error);
+          alert("Error transcribing audio.");
+        } finally {
+          setIsTranscribing(false);
+          // Stop all audio tracks to release microphone
+          stream.getTracks().forEach(track => track.stop());
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+
+    } catch (err) {
+      console.error("Microphone access denied:", err);
+      alert("Microphone access is required. Please check your browser permissions.");
+    }
+  };
 
   // --- DOWNLOAD CHAT FUNCTION ---
   const handleDownloadChat = () => {
@@ -118,47 +203,6 @@ export default function BharatJurisChat() {
     fileDownload.download = `Consultation_History_${new Date().toISOString().split('T')[0]}.doc`;
     fileDownload.click();
     document.body.removeChild(fileDownload);
-  };
-
-  const handleVoiceInput = () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      alert("Voice input is not supported in this browser. Please use Chrome or Edge.");
-      return;
-    }
-
-    if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-        recognitionRef.current = null;
-      }
-      setIsListening(false);
-      return;
-    }
-
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = selectedLang.code;
-    recognition.continuous = true; 
-    recognition.interimResults = true;
-
-    recognitionRef.current = recognition;
-    setIsListening(true);
-
-    recognition.onresult = (event: any) => {
-      let finalTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        }
-      }
-      if (finalTranscript) {
-        setInput((prev) => prev + (prev && !prev.endsWith(' ') ? " " : "") + finalTranscript);
-      }
-    };
-
-    recognition.onerror = (event: any) => { console.error(event.error); setIsListening(false); };
-    recognition.onend = () => { setIsListening(false); };
-    recognition.start();
   };
 
   return (
@@ -331,27 +375,31 @@ export default function BharatJurisChat() {
                     <input 
                         value={input}
                         onChange={handleInputChange}
-                        placeholder={isListening ? "Listening... (Click Red icon to stop)" : `Ask in ${selectedLang.label}...`}
+                        placeholder={isRecording ? "Recording... (Click mic to stop)" : isTranscribing ? "Transcribing audio..." : `Ask in ${selectedLang.label}...`}
                         className="w-full bg-transparent text-white py-4 pl-6 pr-32 focus:outline-none placeholder-gray-600"
-                        disabled={isLoading}
+                        disabled={isLoading || isRecording || isTranscribing}
                     />
                     
                     <div className="absolute right-3 flex items-center gap-2">
-                        {/* Voice Button */}
+                        {/* VOICE BUTTON - UPDATED LOGIC */}
                         <button 
                           type="button" 
                           onClick={handleVoiceInput}
+                          disabled={isTranscribing}
                           className={`p-2 rounded-full transition-all ${
-                            isListening 
-                            ? 'bg-red-500/20 text-red-500 animate-pulse hover:bg-red-500/30' 
+                            isRecording 
+                            ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/20' 
+                            : isTranscribing 
+                            ? 'bg-gray-800 text-gray-500 cursor-wait'
                             : 'text-gray-400 hover:text-white hover:bg-gray-800'
                           }`}
-                          title={isListening ? "Stop Recording" : "Start Voice Input"}
+                          title={isRecording ? "Stop Recording" : "Start Voice Input"}
                         >
-                            {isListening ? <Square className="w-5 h-5 fill-current" /> : <Mic className="w-5 h-5" />}
+                            {/* Shows SQUARE when recording, LOADER when processing, MIC when idle */}
+                            {isRecording ? <Square className="w-5 h-5 fill-current" /> : isTranscribing ? <Loader2 className="w-5 h-5 animate-spin"/> : <Mic className="w-5 h-5" />}
                         </button>
                         
-                        {/* Send Button */}
+                        {/* SEND BUTTON */}
                         <button 
                             type="submit" 
                             disabled={isLoading || !input}

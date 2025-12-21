@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image"; 
 import { Button } from "@/components/ui/button";
-import { Scale, Menu } from "lucide-react";
+import { Menu } from "lucide-react"; 
 import { usePathname } from "next/navigation";
 import {
   Sheet,
@@ -13,8 +14,8 @@ import {
 export default function Navbar() {
   const pathname = usePathname();
 
-  // Hide Navbar when inside the actual tools to maximize screen space
-  const hiddenPaths = ["/chat", "/documents", "/draft"];
+  // UPDATED: Added "/legal" to hiddenPaths so it doesn't show on the Legal page
+  const hiddenPaths = ["/chat", "/documents", "/draft", "/legal"];
 
   if (hiddenPaths.includes(pathname)) {
     return null;
@@ -31,13 +32,20 @@ export default function Navbar() {
     <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-5xl z-50">
       <div className="rounded-full border border-white/20 dark:border-white/10 bg-white/10 dark:bg-black/20 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all duration-300 px-6 py-3 flex items-center justify-between">
         
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg text-slate-900 dark:text-slate-100 hover:opacity-80 transition-opacity">
-          <Scale className="h-5 w-5" />
-          <span>BharatJuris</span>
+        {/* Logo Section */}
+        <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
+          <div className="relative h-10 w-10"> 
+            <Image 
+              src="/logo.png" 
+              alt="Bharat Juris Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
         </Link>
 
-        {/* Desktop Nav (Text Only) */}
+        {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-700 dark:text-slate-200">
           {navLinks.map((link) => (
             <Link 
@@ -50,7 +58,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Right Actions (No Theme Toggle) */}
+        {/* Right Actions */}
         <div className="hidden md:flex items-center gap-3">
            <Link href="/chat">
             <Button size="sm" className="rounded-full bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 font-bold px-6 shadow-md transition-transform hover:scale-105">

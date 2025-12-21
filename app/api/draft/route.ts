@@ -8,33 +8,78 @@ export async function POST(req: NextRequest) {
     }
 
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-    const { type, partyA, partyB, startDate, amount, terms } = await req.json();
+    const { type, partyA, partyB, startDate, amount, terms, state } = await req.json();
 
-    // Construct a specific legal prompt based on the user's input
+    // 1. STATE-SPECIFIC LEGAL CONTEXT LOGIC
+    let applicableLaw = "Indian Contract Act, 1872 & Transfer of Property Act, 1882";
+    let jurisdiction = "India (Central Acts)";
+
+    // Define Rules for Specific States
+    switch (state) {
+        case "Maharashtra":
+            applicableLaw = "Maharashtra Rent Control Act, 1999 & Maharashtra Stamp Act";
+            jurisdiction = "Maharashtra Courts";
+            break;
+        case "Gujarat":
+            applicableLaw = "Gujarat Rents, Hotel and Lodging House Rates Control Act, 1947";
+            jurisdiction = "Gujarat Courts";
+            break;
+        case "Delhi":
+            applicableLaw = "Delhi Rent Control Act, 1958";
+            jurisdiction = "Delhi Courts";
+            break;
+        case "Karnataka":
+            applicableLaw = "Karnataka Rent Control Act, 2001";
+            jurisdiction = "Karnataka Courts";
+            break;
+        case "Tamil Nadu":
+            applicableLaw = "Tamil Nadu Regulation of Rights and Responsibilities of Landlords and Tenants Act, 2017";
+            jurisdiction = "Tamil Nadu Courts";
+            break;
+        case "Telangana":
+            applicableLaw = "Telangana Buildings (Lease, Rent and Eviction) Control Act, 1960";
+            jurisdiction = "Telangana Courts";
+            break;
+        case "Kerala":
+            applicableLaw = "Kerala Buildings (Lease and Rent Control) Act, 1965";
+            jurisdiction = "Kerala Courts";
+            break;
+        default:
+            // Fallback for general South India or unspecified states
+            applicableLaw = "Transfer of Property Act, 1882 (Central Act)";
+            jurisdiction = `${state || "India"} Courts`;
+            break;
+    }
+
+    // 2. CONSTRUCT PRECISE SYSTEM PROMPT
     const systemPrompt = `
-      You are a Senior Advocate at the Supreme Court of India.
-      Draft a professional, legally binding ${type} under Indian Law (Bharatiya Nyaya Sanhita/Contract Act).
+      You are a Senior Advocate at the High Court of ${state || "India"}.
+      Draft a professional, legally binding ${type}.
       
-      Details:
-      - Party A (Landlord/Employer/First Party): ${partyA}
-      - Party B (Tenant/Employee/Second Party): ${partyB}
-      - Effective Date: ${startDate}
-      - Financial Consideration (Rent/Salary): ₹${amount}
-      - Specific Terms: ${terms || "Standard legal clauses apply."}
+      JURISDICTION & LAWS:
+      - State: ${state}
+      - Governing Laws: ${applicableLaw}
+      - Jurisdiction for Disputes: ${jurisdiction}
 
-      Output Requirements:
-      1. Use clear, formal legal language.
-      2. Include standard clauses for Indemnity, Termination, and Dispute Resolution (Arbitration in India).
-      3. Format with Markdown (Bold headings, bullet points).
-      4. DO NOT include placeholders like "[Insert Date]"—use the data provided.
+      DETAILS:
+      - Party A (Landlord/Owner/Deponent): ${partyA}
+      - Party B (Tenant/Lessee/Second Party): ${partyB}
+      - Effective Date: ${startDate}
+      - Financial Consideration: ₹${amount}
+      - Specific Terms: ${terms || "Standard protection clauses."}
+
+      OUTPUT REQUIREMENTS:
+      1. Start directly with the title (e.g., "RENT AGREEMENT").
+      2. Include a "Governing Law" clause specifically mentioning "${applicableLaw}".
+      3. Use formal legal language suitable for ${state}.
+      4. Format with Markdown (Bold headings, bullet points).
     `;
 
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: "Draft the agreement now." }
+        { role: "user", content: "Draft the legal document now." }
       ],
-      // Use the powerful text model for complex writing
       model: "llama-3.3-70b-versatile",
       temperature: 0.3, 
     });

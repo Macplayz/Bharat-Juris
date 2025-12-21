@@ -102,7 +102,7 @@ export default function Home() {
             </div>
           </div>
           
-          {/* Image (Clean, no hovering effects) */}
+          {/* Image */}
           <div className="order-1 md:order-2 relative h-[500px] w-full rounded-[2rem] overflow-hidden shadow-2xl border border-[#333]">
               <Image 
                 src="/court.jpg" 
@@ -119,7 +119,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. FEATURES SECTION */}
+      {/* 3. FEATURES SECTION - UPDATED WITH GREY ICONS */}
       <section id="features" className="w-full py-32 px-4 bg-[#050505]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20 space-y-4">
@@ -145,9 +145,10 @@ export default function Home() {
                 desc: "Create legally binding Rent Agreements and Affidavits in minutes, without a lawyer."
               }
             ].map((feature, i) => (
-              <Card key={i} className="group bg-[#0a0a0a] border-[#333] hover:border-blue-500/40 hover:bg-[#0f0f0f] transition-colors duration-300">
+              <Card key={i} className="group bg-[#0a0a0a] border-[#333] hover:border-gray-700 hover:bg-[#0f0f0f] transition-all duration-300">
                 <CardHeader>
-                  <feature.icon className="h-10 w-10 text-white mb-4 opacity-80 group-hover:opacity-100 group-hover:text-blue-400 transition-colors duration-300" />
+                  {/* UPDATED: Icons are now GREY (text-gray-500) and turn WHITE on hover */}
+                  <feature.icon className="h-12 w-12 text-gray-500 mb-6 group-hover:text-white transition-colors duration-300" />
                   <CardTitle className="text-2xl font-bold tracking-wide text-white group-hover:text-blue-400 transition-colors duration-300">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="text-lg text-gray-400 leading-relaxed tracking-wide group-hover:text-gray-300 transition-colors duration-300">
@@ -193,9 +194,16 @@ export default function Home() {
             
             {/* Left: Brand & Info */}
             <div className="space-y-4 max-w-sm">
-                <div className="flex items-center gap-2 font-bold text-2xl tracking-tight text-white">
-                    <Scale className="h-6 w-6 text-blue-500" />
-                    <span>BharatJuris</span>
+                <div className="flex items-center gap-3 font-bold text-2xl tracking-tight text-white">
+                    {/* Large Footer Logo (Text Removed) */}
+                    <div className="relative h-24 w-24"> 
+                        <Image 
+                          src="/logo.png" 
+                          alt="Bharat Juris Logo"
+                          fill
+                          className="object-contain"
+                        />
+                    </div>
                 </div>
                 <p className="text-sm text-gray-400 leading-relaxed">
                     Democratizing legal access through AI. <br/> 
@@ -225,9 +233,9 @@ export default function Home() {
                 <div className="space-y-4">
                     <h4 className="text-white font-semibold tracking-wide">Legal</h4>
                     <ul className="space-y-2 text-gray-400">
-                        <li><Link href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
-                        <li><Link href="#" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
-                        <li><Link href="#" className="hover:text-blue-400 transition-colors">Disclaimer</Link></li>
+                        <li><Link href="/legal" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
+                        <li><Link href="/legal" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
+                        <li><Link href="/legal" className="hover:text-blue-400 transition-colors">Disclaimer</Link></li>
                     </ul>
                 </div>
 
@@ -235,13 +243,13 @@ export default function Home() {
                 <div className="space-y-4">
                     <h4 className="text-white font-semibold tracking-wide">Connect</h4>
                     <div className="flex gap-4">
-                        <Link href="#" className="p-2 bg-[#151515] rounded-full text-gray-400 hover:text-white hover:bg-blue-600 transition-all border border-[#222]">
+                        <Link href="https://x.com/PlayzMac" target="_blank" className="p-2 bg-[#151515] rounded-full text-gray-400 hover:text-white hover:bg-blue-600 transition-all border border-[#222]">
                             <Twitter className="h-4 w-4" />
                         </Link>
-                        <Link href="https://github.com/Macplayz/Bharat-Juris" className="p-2 bg-[#151515] rounded-full text-gray-400 hover:text-white hover:bg-gray-700 transition-all border border-[#222]">
+                        <Link href="https://github.com/Macplayz" target="_blank" className="p-2 bg-[#151515] rounded-full text-gray-400 hover:text-white hover:bg-gray-700 transition-all border border-[#222]">
                             <Github className="h-4 w-4" />
                         </Link>
-                        <Link href="#" className="p-2 bg-[#151515] rounded-full text-gray-400 hover:text-white hover:bg-red-600 transition-all border border-[#222]">
+                        <Link href="mailto:machhanilay@gmail.com" className="p-2 bg-[#151515] rounded-full text-gray-400 hover:text-white hover:bg-red-600 transition-all border border-[#222]">
                             <Mail className="h-4 w-4" />
                         </Link>
                     </div>
