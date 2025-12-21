@@ -12,10 +12,12 @@ import {
   CheckCircle, 
   Copy,
   Sparkles, 
+  Printer,       
   Shield,        
   Scale,         
   AlertTriangle,
-  FileText
+  FileText,
+  MapPin // New Icon for State
 } from "lucide-react";
 
 export default function DocumentDrafterPage() {
@@ -30,7 +32,8 @@ export default function DocumentDrafterPage() {
     partyB: '', 
     financial: '', 
     startDate: new Date().toISOString().split('T')[0],
-    purpose: '' 
+    purpose: '',
+    state: '' // NEW STATE FIELD
   });
 
   const getLabels = () => {
@@ -49,6 +52,11 @@ export default function DocumentDrafterPage() {
   const labels = getLabels();
 
   const handleGenerate = async () => {
+    if (!formData.state) {
+        alert("Please select a State/Jurisdiction.");
+        return;
+    }
+
     setIsGenerating(true);
     setGeneratedDraft(""); 
 
@@ -59,6 +67,7 @@ export default function DocumentDrafterPage() {
         partyB: formData.partyB || "N/A", 
         amount: formData.financial || "0",
         startDate: formData.startDate,
+        state: formData.state, // Send State to API
         terms: docType === 'Affidavit' 
           ? `Statement of Truth: ${formData.purpose}` 
           : "Standard legal protection clauses apply."
@@ -75,12 +84,11 @@ export default function DocumentDrafterPage() {
 
       // --- CLEANUP LOGIC ---
       let cleanDraft = data.draft;
-      // Remove Markdown headers and separators so we can use our own formatting
-      cleanDraft = cleanDraft.replace(/^# .+\n/g, ''); 
-      cleanDraft = cleanDraft.replace(/^## .+\n/g, ''); 
-      cleanDraft = cleanDraft.replace(/^\*\*.+\*\*\n/g, '');
-      cleanDraft = cleanDraft.replace(/^[A-Z ]+\n/g, ''); 
-      cleanDraft = cleanDraft.replace(/^[=\-]{3,}/gm, '');
+      cleanDraft = cleanDraft.replace(/^(Here is|This is|Below is).+(:|\n)/i, '');
+      cleanDraft = cleanDraft.replace(/^#+ .+/gm, ''); 
+      cleanDraft = cleanDraft.replace(/^\*\*[\w\s]+\*\*/gm, '');
+      cleanDraft = cleanDraft.replace(/^[A-Z ]{5,}(\n|$)/gm, '');
+      cleanDraft = cleanDraft.replace(/^[=\-_]{3,}/gm, '');
 
       setGeneratedDraft(cleanDraft.trim());
       setStep(3);
@@ -97,7 +105,6 @@ export default function DocumentDrafterPage() {
     alert("Contract text copied!");
   };
 
-  // --- DOWNLOAD WORD DOC FUNCTION ---
   const handleDownloadWord = () => {
     const content = document.getElementById('legal-document');
     if (!content) return;
@@ -123,7 +130,7 @@ export default function DocumentDrafterPage() {
     const fileDownload = document.createElement("a");
     document.body.appendChild(fileDownload);
     fileDownload.href = source;
-    fileDownload.download = `${docType.replace(/\s+/g, '_')}_Draft.doc`;
+    fileDownload.download = `${docType.replace(/\s+/g, '_')}_${formData.state}.doc`;
     fileDownload.click();
     document.body.removeChild(fileDownload);
   };
@@ -143,7 +150,7 @@ export default function DocumentDrafterPage() {
            </div>
         </div>
         <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20">
-            <span className="text-[10px] text-blue-400 uppercase tracking-wider font-bold">Multi-Doc Engine</span>
+            <span className="text-[10px] text-blue-400 uppercase tracking-wider font-bold">Multi-State Engine</span>
         </div>
       </header>
 
@@ -158,25 +165,24 @@ export default function DocumentDrafterPage() {
                 <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
                     <div className="text-center space-y-4">
                         <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-indigo-600 bg-clip-text text-transparent pb-2">
-                           Instantly Available.
+                           Draft Local. Legal. Instant.
                         </h2>
                         <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">
-                            Select a professional legal template below to start drafting immediately.
+                            Select a template. We automatically apply the specific State Laws (e.g., Maharashtra Rent Control Act) based on your location.
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
                         {[
-                          { id: 'Rent Agreement', icon: Home, desc: 'Residential & Commercial' },
-                          { id: 'Affidavit', icon: Scale, desc: 'Self-Declaration Statement' },
-                          { id: 'NDA', icon: Shield, desc: 'Non-Disclosure Contract' }
+                          { id: 'Rent Agreement', icon: Home, desc: 'State-Specific Rent Laws' },
+                          { id: 'Affidavit', icon: Scale, desc: 'Court Admissible' },
+                          { id: 'NDA', icon: Shield, desc: 'Corporate Protection' }
                         ].map((item) => (
                            <div 
                              key={item.id}
                              onClick={() => { setDocType(item.id); setStep(2); }}
                              className="group p-6 bg-[#0a0a0a] border border-[#333] hover:border-blue-500/50 hover:bg-[#111] rounded-3xl cursor-pointer transition-all duration-300 flex flex-col items-center text-center gap-4 shadow-xl"
                           >
-                              {/* ICONS - BLUE THEME */}
                               <div className="p-4 bg-[#151515] rounded-2xl text-blue-500 group-hover:scale-110 group-hover:bg-blue-500/20 transition-all border border-[#222] group-hover:border-blue-500/30">
                                   <item.icon className="w-8 h-8" />
                               </div>
@@ -207,6 +213,29 @@ export default function DocumentDrafterPage() {
                         </h2>
                         
                         <div className="space-y-5">
+                            {/* --- NEW: STATE SELECTION DROPDOWN --- */}
+                            <div className="group">
+                                <label className="text-xs text-gray-500 uppercase tracking-wider font-bold ml-1 mb-1 flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" /> State / Jurisdiction
+                                </label>
+                                <select 
+                                    className="w-full bg-[#111] border border-[#333] rounded-xl p-4 text-white focus:border-blue-500 outline-none appearance-none"
+                                    value={formData.state}
+                                    onChange={(e) => setFormData({...formData, state: e.target.value})}
+                                >
+                                    <option value="" disabled>Select State</option>
+                                    <option value="Maharashtra">Maharashtra (MH)</option>
+                                    <option value="Delhi">Delhi (DL)</option>
+                                    <option value="Gujarat">Gujarat (GJ)</option>
+                                    <option value="Karnataka">Karnataka (KA)</option>
+                                    <option value="Tamil Nadu">Tamil Nadu (TN)</option>
+                                    <option value="Telangana">Telangana (TS)</option>
+                                    <option value="Kerala">Kerala (KL)</option>
+                                    <option value="Andhra Pradesh">Andhra Pradesh (AP)</option>
+                                    <option value="Other">Other (Central Acts)</option>
+                                </select>
+                            </div>
+
                             <div className="group">
                                 <label className="text-xs text-gray-500 uppercase tracking-wider font-bold ml-1 mb-1 block">{labels.A}</label>
                                 <input 
@@ -231,7 +260,7 @@ export default function DocumentDrafterPage() {
 
                             {docType === 'Affidavit' && (
                                 <div className="group">
-                                    <label className="text-xs text-gray-500 uppercase tracking-wider font-bold ml-1 mb-1 block">What are you stating?</label>
+                                    <label className="text-xs text-gray-500 uppercase tracking-wider font-bold ml-1 mb-1 block">Statement</label>
                                     <textarea 
                                         className="w-full bg-[#111] border border-[#333] rounded-xl p-4 text-white focus:border-blue-500 outline-none min-h-[100px]"
                                         placeholder="I declare that..."
@@ -268,7 +297,7 @@ export default function DocumentDrafterPage() {
 
                         <button 
                             onClick={handleGenerate}
-                            disabled={isGenerating || !formData.partyA}
+                            disabled={isGenerating || !formData.partyA || !formData.state}
                             className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isGenerating ? "AI is Drafting..." : `Generate ${docType}`}
@@ -278,7 +307,7 @@ export default function DocumentDrafterPage() {
                 </div>
             )}
 
-            {/* STEP 3: PREVIEW & CONTROLS */}
+            {/* STEP 3: PREVIEW */}
             {step === 3 && (
                 <div className="animate-in zoom-in-95 duration-500 flex flex-col md:flex-row gap-8 h-[calc(100vh-140px)]">
                     
@@ -289,10 +318,12 @@ export default function DocumentDrafterPage() {
                         </div>
                         <div>
                             <h2 className="text-3xl font-bold text-white mb-2">Draft Ready!</h2>
-                            <p className="text-gray-400 text-sm">Your <span className="text-white font-medium">{docType}</span> is ready.</p>
+                            <p className="text-gray-400 text-sm">
+                                Compliance: <span className="text-blue-400 font-bold">{formData.state} Laws</span>
+                            </p>
                         </div>
                         
-                        {/* Download Buttons - PDF REMOVED */}
+                        {/* Download Buttons */}
                         <div className="flex flex-col gap-3 w-full">
                            <button 
                               onClick={handleDownloadWord}
@@ -314,9 +345,9 @@ export default function DocumentDrafterPage() {
                             <div className="flex items-start gap-3">
                                  <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                                  <div className="space-y-1">
-                                    <p className="text-xs font-bold text-yellow-500 uppercase tracking-wide">Edit & Print</p>
+                                    <p className="text-xs font-bold text-yellow-500 uppercase tracking-wide">Legal Validity</p>
                                     <p className="text-[11px] text-gray-400 leading-relaxed">
-                                        Download the Word file to fill in missing details (like Stamp Numbers) before printing on Stamp Paper.
+                                        This draft is based on <strong>{formData.state}</strong> laws. Print on Non-Judicial Stamp Paper of appropriate value.
                                     </p>
                                  </div>
                             </div>
@@ -324,13 +355,11 @@ export default function DocumentDrafterPage() {
                         <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-white underline decoration-gray-800 underline-offset-4">Create New</button>
                     </div>
 
-                    {/* PREVIEW CONTAINER - FIXED TO WHITE */}
+                    {/* PREVIEW CONTAINER */}
                     <div className="md:w-2/3 bg-gray-800/50 p-4 rounded-xl border border-gray-700 overflow-hidden flex flex-col ui-controls-container">
-                        <div className="text-xs text-gray-400 mb-2 text-center uppercase tracking-widest ui-controls">A4 Preview</div>
+                        <div className="text-xs text-gray-400 mb-2 text-center uppercase tracking-widest ui-controls">A4 Preview • {formData.state}</div>
                         
                         <div className="flex-1 overflow-y-auto bg-gray-900/50 rounded-lg p-4 shadow-inner custom-scrollbar">
-                           
-                           {/* LEGAL DOCUMENT DISPLAY - Force White Background */}
                            <div 
                               id="legal-document"
                               className="bg-white text-black mx-auto shadow-2xl"
@@ -338,15 +367,14 @@ export default function DocumentDrafterPage() {
                                 width: '210mm',
                                 minHeight: '297mm',
                                 padding: '25mm',
-                                fontFamily: '"Times New Roman", Times, serif', // FORCE TIMES NEW ROMAN
+                                fontFamily: '"Times New Roman", Times, serif',
                                 fontSize: '12pt',
                                 lineHeight: '1.6',
-                                textAlign: 'justify', // FORCE JUSTIFY
-                                color: '#000000', // FORCE BLACK TEXT
-                                backgroundColor: '#ffffff' // FORCE WHITE BG
+                                textAlign: 'justify',
+                                color: '#000000',
+                                backgroundColor: '#ffffff'
                               }}
                            >
-                              {/* HARDCODED TITLE */}
                               <h1 style={{
                                 textAlign: 'center', 
                                 textTransform: 'uppercase', 
@@ -362,7 +390,6 @@ export default function DocumentDrafterPage() {
                               <ReactMarkdown 
                                   remarkPlugins={[remarkGfm]}
                                   components={{
-                                      // Render normal H1s as H2s to avoid conflict with our main title
                                       h1: ({node, ...props}) => (
                                         <h2 style={{ fontSize: '14pt', marginTop: '2rem', marginBottom: '1rem', textTransform: 'uppercase', borderBottom: '1px solid #ccc', paddingBottom: '5px', fontWeight: 'bold', color: 'black' }} {...props} />
                                       ),

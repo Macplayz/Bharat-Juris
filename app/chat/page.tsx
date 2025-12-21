@@ -213,15 +213,19 @@ export default function BharatJurisChat() {
           </div>
 
           <div className="flex items-center gap-3">
-              <button onClick={handleDownloadChat} className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#333] bg-[#111] hover:bg-[#222] hover:border-blue-500/50 transition-all text-sm text-gray-300">
+              {/* ✅ FIXED: Button is now 'flex' (visible) everywhere. Text is hidden on mobile. */}
+              <button 
+                onClick={handleDownloadChat} 
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#333] bg-[#111] hover:bg-[#222] hover:border-blue-500/50 transition-all text-sm text-gray-300"
+              >
                 <Download className="w-4 h-4" />
-                <span className="hidden lg:inline">Download Chat</span>
+                <span className="hidden md:inline">Download Chat</span>
               </button>
 
               <div className="relative" ref={dropdownRef}>
                 <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#333] bg-[#111] hover:border-gray-600 transition-all text-sm group">
                     <span className="flex items-center justify-center w-5 h-5 bg-blue-600 text-[10px] font-bold rounded text-white">{selectedLang.short}</span>
-                    <span className="text-gray-200">{selectedLang.label}</span>
+                    <span className="text-gray-200 hidden sm:inline">{selectedLang.label}</span> {/* Optional: Hide Label on very small screens if needed */}
                     <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isDropdownOpen && (
@@ -255,11 +259,9 @@ export default function BharatJurisChat() {
                             <ReactMarkdown 
                               remarkPlugins={[remarkGfm]}
                               components={{
-                                // UPDATED: Fixed List Styling (Removed list-inside, added pl-6)
                                 ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-2 space-y-1 text-gray-300" {...props} />,
                                 ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-2 space-y-1 text-gray-300" {...props} />,
                                 li: ({node, ...props}) => <li className="marker:text-blue-500" {...props} />,
-                                // Other styles
                                 strong: ({node, ...props}) => <span className="font-bold text-blue-400" {...props} />,
                                 p: ({node, ...props}) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
                                 h1: ({node, ...props}) => <h1 className="text-xl font-bold mt-4 mb-2 text-white" {...props} />,
